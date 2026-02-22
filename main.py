@@ -2,7 +2,6 @@ from flask import Flask, request, render_template, jsonify, url_for
 from flask_cors import CORS
 from PIL import Image
 import numpy as np
-import tensorflow as tf
 import os
 
 app = Flask(__name__)
@@ -12,10 +11,6 @@ CORS(app)
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-# Load the trained model
-MODEL_PATH = "plant_diseases_model.h5"
-model = tf.keras.models.load_model(MODEL_PATH)
 
 # Class names for plant diseases
 class_names = [
@@ -34,7 +29,6 @@ class_names = [
 ]
 
 # Disease treatments dictionary
-# (Ensure this dictionary is populated as in the original application.)
 disease_treatments = {
         "Apple_healthy": {
             "name": "Healthy Apple",
@@ -651,8 +645,8 @@ disease_treatments = {
                 }
             },
             "severity": "None"
-        },            
-            "Tomato_Bacterial_spot": {
+        },
+        "Tomato_Bacterial_spot": {
             "name": "Tomato Bacterial Spot",
             "description": "Bacterial disease causing dark, raised spots on leaves and fruit",
             "treatment": [
@@ -1033,6 +1027,7 @@ faq = [
         "answer": "No"
     }
 ]
+
 @app.route('/')
 def home():
     """Render the home page with the upload form and chatbot."""
@@ -1040,43 +1035,18 @@ def home():
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    """Handle image upload and prediction."""
     try:
-        # Retrieve the uploaded image and location
         image = request.files['image']
         location = request.form.get('location')
-
-        # Save the image locally
         image_path = os.path.join(app.config['UPLOAD_FOLDER'], image.filename)
         image.save(image_path)
-
-        # Preprocess the image
-        img = Image.open(image).resize((128, 128))  # Resize to model input size
-        img_array = np.array(img) / 255.0  # Normalize to [0, 1]
-        img_array = np.expand_dims(img_array, axis=0)  # Add batch dimension
-
-        # Perform prediction
-        predictions = model.predict(img_array)
-        disease_index = np.argmax(predictions)  # Get index of the highest probability
-        disease_name = class_names[disease_index]
-
-        # Prepare disease information
-        if disease_name in healthy_plants:
-            disease_info = {
-                "name": "Healthy Plant",
-                "description": "The plant is healthy. No treatment required.",
-                "treatment": [],
-                "severity": "None"
-            }
-        else:
-            disease_info = disease_treatments.get(disease_name, {
-                "name": "Unknown Disease",
-                "description": "No information available for this disease.",
-                "treatment": ["Consult an expert."],
-                "severity": "Unknown"
-            })
-
-        # Render the result page
+        # Placeholder result since the AI model is removed
+        disease_info = {
+            "name": "AI Analysis (Maintenance)",
+            "description": "The AI detection engine is currently offline to save resources. Use the chatbot below for help!",
+            "treatment": ["Ensure proper watering", "Check soil pH", "Monitor for pests"],
+            "severity": "N/A"
+        }
         return render_template(
             'result.html',
             result=disease_info,
@@ -1084,7 +1054,7 @@ def predict():
             image_url=url_for('static', filename=f'uploads/{image.filename}')
         )
     except Exception as e:
-        return f"An error occurred: {str(e)}", 500
+        return f"Error: {str(e)}", 500
 
 @app.route('/chat', methods=['POST'])
 def chat():
